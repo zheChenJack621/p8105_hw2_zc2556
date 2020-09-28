@@ -1,0 +1,93 @@
+---
+title: "P8105-HW2"
+author: "Zhe Chen"
+date: "2020/9/28"
+output: github_document
+---
+
+## Problem 1
+
+### Include relevent library
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+
+### Import data:
+
+```{r, message = FALSE}
+trashwheel =
+  read_xlsx("./Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = cell_cols("A:N")) %>% janitor::clean_names() %>%
+drop_na(dumpster) %>%
+mutate(
+    sports_balls = round(sports_balls),
+    sports_balls = as.integer(sports_balls)
+  )
+
+```
+
+### Data of Precipitation for 2018
+
+```{r}
+precip_2018 = 
+	read_excel(
+		"./Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+		sheet = "2018 Precipitation",
+		skip = 1
+	) %>% 
+	janitor::clean_names() %>% 
+	drop_na(month) %>% 
+	mutate(year = 2018) %>% 
+	relocate(year)
+```
+
+### Data of Precipitation for 2017
+
+```{r}
+precip_2017 = 
+	read_excel(
+		"./Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+		sheet = "2017 Precipitation",
+		skip = 1
+	) %>% 
+	janitor::clean_names() %>% 
+	drop_na(month) %>% 
+	mutate(year = 2017) %>% 
+	relocate(year)
+```
+
+### Combining 2018 and 2017 data
+
+```{r}
+month_df = 
+	tibble(
+		month = 1:12,
+		month_name = month.name
+	)
+
+precip = 
+	bind_rows(precip_2018, precip_2017)
+
+precip_df =
+	left_join(precip, month_df, by = "month")
+
+```
+
+This dataset contains information from the Mr. Trashwheel trash collector in Baltimore, Maryland. As trash enters the inner harbor, the trashwheel collects that trash, and stores it in a dumpster. The dataset contains information on year, month, and trash collected, include some specific kinds of trash. There are a total of `r nrow(trashwheel)` rows in our final dataset. Additional data sheets include month precipitation data. In this dataset:
+
+* The median number of sports balls found in a dumpster in 2017 was `r trashwheel %>% filter(year == 2017) %>% pull(sports_balls) %>% median()`
+* The total precipitation in 2018 was `r precip%>% filter(year == 2018) %>% pull(total) %>% sum()` inches.
+
+
+
+
+
+
+
+
+
+
+
+

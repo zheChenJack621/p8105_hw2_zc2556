@@ -15,9 +15,9 @@ library(readxl)
 ```
 
 
-### Import data:
+### Import data
 
-```{r, message = FALSE}
+```{r, warning = FALSE}
 trashwheel =
   read_xlsx("./Trash-Wheel-Collection-Totals-8-6-19.xlsx", range = cell_cols("A:N")) %>% janitor::clean_names() %>%
 drop_na(dumpster) %>%
@@ -80,10 +80,47 @@ This dataset contains information from the Mr. Trashwheel trash collector in Bal
 * The median number of sports balls found in a dumpster in 2017 was `r trashwheel %>% filter(year == 2017) %>% pull(sports_balls) %>% median()`
 * The total precipitation in 2018 was `r precip%>% filter(year == 2018) %>% pull(total) %>% sum()` inches.
 
+## Problem 2
 
+### Import and Clean the Data
 
+```{r, warning= FALSE}
+# import and initial cleaning
+NYC_Transit =
+  read_csv("./NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>% 
+  janitor::clean_names() %>% #clean the name
+  select(line, name = station_name, route1:route11, station_latitude, station_longitude, entrance_type , entry, vending, ada) %>% #select meaningful variables
+   mutate_at(vars(route1:route11), funs(as.character)) #convert to character for further cleaning
 
+# make the data more tidy
+NYC_Transit_tidy = 
+  NYC_Transit %>%
+  # merging variables to a single variable
+  pivot_longer( 
+      route1:route11,
+      names_to = "routes",
+      values_to = "routes served",
+      names_prefix = "route"
+    ) %>%
+  drop_na("routes served") # abandon observations with missing values
+NYC_Transit$entry = ifelse(NYC_Transit$entry == "YES", TRUE, FALSE) # convert entry to logical type
+head(NYC_Transit_tidy) 
+```
 
+  Above is the first 10 lines from the data set some cleaning. Our data set, NYC_Transit, contains the information about entrance, exit for each subway in NYC. We cleaned the data set in several steps:
+  
+  * make the variable name to a uniform format;
+  * keep variables that are useful(line, station name, routes, the latitude and the longitude of the station, entrance type, entry, vending, ADA), and rename some variables;
+  * merge "route" variables into one variable "route" with variable "route served" which contains the transfer information and take off observations with missing values in "route served" variable; 
+  * convert entry's data type to logical.
+  
+  After cleaning, we have a more tidy data set with dimension of `r nrow(NYC_Transit)*ncol(NYC_Transit)`. This data set is pretty tidy now.
+
+### Reformat the data
+
+```{r}
+#
+```
 
 
 

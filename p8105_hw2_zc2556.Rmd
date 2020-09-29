@@ -9,7 +9,7 @@ output: github_document
 
 ### Include relevent library
 
-```{r}
+```{r, warning=FALSE}
 library(tidyverse)
 library(readxl)
 ```
@@ -90,7 +90,7 @@ NYC_Transit =
   read_csv("./NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>% 
   janitor::clean_names() %>% #clean the name
   select(line, name = station_name, route1:route11, station_latitude, station_longitude, entrance_type , entry, vending, ada) %>% #select meaningful variables
-   mutate_at(vars(route1:route11), funs(as.character)) #convert to character for further cleaning
+  mutate_at(vars(route1:route11), funs(as.character)) #convert to character for further cleaning
 
 # make the data more tidy
 NYC_Transit_tidy = 
@@ -184,14 +184,14 @@ pols_month =
     month = month.name[as.numeric(month)] #change month number to month names
     ) %>%
   mutate(
-    president = prez_gop + prez_dem
+    president = ifelse(prez_gop == 0, "dem", "gop")
   ) %>%
   select(
     -prez_dem, -prez_gop, -day
   )
 ```
 
-We import the data set "pols_month.csv". Interestingly, we have the value "2" in "prez_gop" during 1974 and it may because there was some special historical event and we decide to keep it here. We have variables containing the president, number of governors, senators and representatives in both parties, year and month. It's dimension is `r nrow(pols_month)`X`r ncol(pols_month)`; year range is `r range(pols_month$year)`; the key variables are year and month, meaning that we can identify any observations with a combined year and month.  
+We import the data set "pols_month.csv". Interestingly, we have the value "2" in "prez_gop" during 1974 and it may because there was a special historical event and we decided to keep it here. We have variables containing the belonging party of the president, number of governors, senators and representatives in both parties, year and month. It's dimension is `r nrow(pols_month)`X`r ncol(pols_month)`; year range is `r range(pols_month$year)`; the key variables are year and month, meaning that we can identify any observations with a combined year and month.  
 
 ```{r}
 #Import and clean snp.csv

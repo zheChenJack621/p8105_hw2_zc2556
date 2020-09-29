@@ -1,5 +1,5 @@
 ---
-title: "P8105-HW2"
+title: "P8105-HW2-zc2556"
 author: "Zhe Chen"
 date: "2020/9/28"
 output: github_document
@@ -98,12 +98,12 @@ NYC_Transit_tidy =
   # merging variables to a single variable
   pivot_longer( 
       route1:route11,
-      names_to = "routes",
-      values_to = "routes served",
+      names_to = "routes number",
+      values_to = "routes name",
       names_prefix = "route"
     ) %>%
-  drop_na("routes served") # abandon observations with missing values
-NYC_Transit$entry = ifelse(NYC_Transit$entry == "YES", TRUE, FALSE) # convert entry to logical type
+  drop_na("routes name") # abandon observations with missing values
+NYC_Transit_tidy$entry = ifelse(NYC_Transit_tidy$entry == "YES", TRUE, FALSE) # convert entry to logical type
 head(NYC_Transit_tidy) 
 ```
 
@@ -114,13 +114,128 @@ head(NYC_Transit_tidy)
   * merge "route" variables into one variable "route" with variable "route served" which contains the transfer information and take off observations with missing values in "route served" variable; 
   * convert entry's data type to logical.
   
-  After cleaning, we have a more tidy data set with dimension of `r nrow(NYC_Transit)*ncol(NYC_Transit)`. This data set is pretty tidy now.
+  After cleaning with pivot_longer, we have a more tidy data set with dimension of `r nrow(NYC_Transit_tidy)`X`r ncol(NYC_Transit_tidy)`. This data set is pretty tidy now.
 
-### Reformat the data
+### Answer Questions and Reformat the Data
 
 ```{r}
-#
+# find how many distinct stations
+num_dis_stat = 
+  NYC_Transit_tidy %>%
+  distinct(line, name ) %>%
+  nrow()
+num_dis_stat
+
+# find how many stations are ADA compliant
+num_ADA_comp = 
+  NYC_Transit_tidy %>% 
+  filter(ada == 1) %>%
+  distinct(line, name) %>%
+  nrow()
+num_ADA_comp
+
+# entrances which allow entering but have no vending
+num_nvend_enter_entrances = 
+  NYC_Transit %>% filter((entry == 'YES')& (vending == 'NO')) %>%
+  nrow()
+num_no_vending = 
+  NYC_Transit %>% filter(vending == 'NO') %>%
+  nrow()
+num_nvend_enter_entrances
+num_no_vending
+prop = num_nvend_enter_entrances/num_no_vending
+prop
 ```
+  We have `r num_dis_stat` distinct stations; `r num_ADA_comp` stations with ADA compliance; lastly, we have the proportion of `r prop`.
+  
+```{r}
+# reformat the data by making route number and name distinctive
+
+# number of distinct stations which serve A train
+num_A =
+  NYC_Transit_tidy %>%
+  filter(`routes name` == 'A')%>%
+  distinct(line, name) %>%
+  nrow()
+num_A
+
+# among them who are ADA compliant
+num_A_ADA =
+  NYC_Transit_tidy %>%
+  filter(`routes name` == 'A')%>%
+  filter(ada == TRUE) %>%
+  distinct(line, name) %>%
+  nrow()
+num_A_ADA
+```
+  We have made the line number and line name variables pivot while cleaning the data. We have `r num_A` of stations which serve A train, and `r num_A_ADA` of them are ADA compliant.
+
+## Problem 3
+
+### Import, import and import.
+
+```{r}
+# Import and clean pols_month.csv
+pols_month =
+  read_csv("./fivethirtyeight_datasets/pols-month.csv") %>% 
+  janitor::clean_names() %>% #clean the name
+  separate(mon, c("year", "month", "day")) %>%
+  mutate(
+    month = month.abb[as.numeric(month)] #change month number to month names
+    ) %>%
+  mutate(
+    prez_gop = ifelse(prez_gop == 0, 0, 1), #we have "2" in our dataset, and replace them to "1"
+    president = prez_gop + prez_dem
+  ) %>%
+  select(
+    -prez_dem, -prez_gop, -day
+  )
+```
+
+We import the data set "pols_month.csv". Since we have "2"s in column prez_gop, and, after checking with WIKI, the U.S president for that period is Ford, who is a republican, we replaced the "2" to "1" (1 for yes). We have variables containing the president, number of governors, senators and representatives in both parties, year and month. It's dimension is `r nrow(pols_month)`X`r ncol(pols_month)`; year range is `r range(pols_month$year)`; the key variables are year and month, meaning that we can identify any observations with a combined year and month.  
+
+```{r}
+#Import and clean snp.csv
+snp =
+  read_csv("./fivethirtyeight_datasets/snp.csv") %>% 
+  janitor::clean_names() %>% #clean the name
+  separate(date, c("month", "day", "year")) %>%
+  mutate(
+    month = month.abb[as.numeric(month)] #change month number to month names
+  ) %>%
+  select(-day) %>%
+  relocate(year, month)
+```
+Similarly, we import and clean the "snp.csv", making it consistent to the pols_month data. We have variables containing the date (year and month) and closing value of the stock. It's dimension is `r nrow(snp)`X`r ncol(snp)`; year range is `r range(snp$year)`; the key variables are year and month, meaning that we can identify any observations with a combined year and month.
+
+```{r}
+#Import and clean unemployment.csv
+unemployment =
+  read_csv("./fivethirtyeight_datasets/unemployment.csv") %>% 
+  janitor::clean_names() %>% #clean the name
+  pivot_longer(
+    jan:dec,
+    names_to = "month",
+    values_to = "unemployment_rate"
+  ) #make it consistent with other two data sets
+  
+```
+We import the "unemployment.csv" and reformat it, consistent with the other data sets. We have variables containing the date (year and month) and unemployment rate at that year and month. It's dimension is `r nrow(unemployment)`X`r ncol(unemployment)`; year range is `r range(snp$year)`; the key variables are year and month, meaning that we can identify any observations with a combined year and month.
+
+### Join and Merge
+
+Finally, we have 3 data sets with the same key variables (year and month), and we now can join them and make one big data set.
+
+```{r}
+snp$year = as.character(snp$year)
+unemployment$year = as.character(unemployment$year)
+final_ds =
+  left_join(pols_month, snp)
+final_ds = 
+  left_join(final_ds, unemployment)
+head(final_ds)
+```
+We merged three data sets by variable year and month and the final data set contains all variables from three data sets. With this final data set, we can check the relation between politics (which party is dominant) and the economy of the society. However, since each data set has a different year range, there are many missing values in this final data set and we may need to clean those missing values for further analysis. 
 
 
 

@@ -181,10 +181,9 @@ pols_month =
   janitor::clean_names() %>% #clean the name
   separate(mon, c("year", "month", "day")) %>%
   mutate(
-    month = month.abb[as.numeric(month)] #change month number to month names
+    month = month.name[as.numeric(month)] #change month number to month names
     ) %>%
   mutate(
-    prez_gop = ifelse(prez_gop == 0, 0, 1), #we have "2" in our dataset, and replace them to "1"
     president = prez_gop + prez_dem
   ) %>%
   select(
@@ -192,7 +191,7 @@ pols_month =
   )
 ```
 
-We import the data set "pols_month.csv". Since we have "2"s in column prez_gop, and, after checking with WIKI, the U.S president for that period is Ford, who is a republican, we replaced the "2" to "1" (1 for yes). We have variables containing the president, number of governors, senators and representatives in both parties, year and month. It's dimension is `r nrow(pols_month)`X`r ncol(pols_month)`; year range is `r range(pols_month$year)`; the key variables are year and month, meaning that we can identify any observations with a combined year and month.  
+We import the data set "pols_month.csv". Interestingly, we have the value "2" in "prez_gop" during 1974 and it may because there was some special historical event and we decide to keep it here. We have variables containing the president, number of governors, senators and representatives in both parties, year and month. It's dimension is `r nrow(pols_month)`X`r ncol(pols_month)`; year range is `r range(pols_month$year)`; the key variables are year and month, meaning that we can identify any observations with a combined year and month.  
 
 ```{r}
 #Import and clean snp.csv
